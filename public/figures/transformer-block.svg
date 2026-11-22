@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-label="一层 Transformer：注意力、残差、前馈" font-family="Source Han Serif SC, Noto Serif SC, Songti SC, SimSun, WenQuanYi Micro Hei, serif">
+  <rect width="760" height="220" fill="#fbf8f2"/>
+  <g fill="none" stroke="#1c1916" stroke-width="1.25">
+    <rect x="36" y="78" width="92" height="64"/>
+    <rect x="196" y="78" width="120" height="64"/>
+    <rect x="384" y="78" width="120" height="64"/>
+    <rect x="572" y="78" width="120" height="64"/>
+  </g>
+  <path d="M128 110 H196 M316 110 H384 M504 110 H572" fill="none" stroke="#1c1916" stroke-width="1.25"/>
+  <path d="M256 78 V48 H444 V78" fill="none" stroke="#8d3a2e" stroke-width="1.25"/>
+  <path d="M444 142 V172 H256 V142" fill="none" stroke="#8d3a2e" stroke-width="1.25"/>
+  <g fill="#1c1916" font-family="serif" font-size="16" text-anchor="middle">
+    <text x="82" y="115">输入</text>
+    <text x="256" y="106">注意力</text>
+    <text x="256" y="128">加权上文</text>
+    <text x="444" y="115">相加 · 归一化</text>
+    <text x="632" y="106">前馈</text>
+    <text x="632" y="128">每个位置单独</text>
+  </g>
+  <g fill="#6f675c" font-family="sans-serif" font-size="13">
+    <text x="300" y="40">残差：把输入加回去</text>
+    <text x="36" y="200">简图只标名称。掩码、多头和具体维度见正文，不在图里假装已经算完。</text>
+  </g>
+</svg>

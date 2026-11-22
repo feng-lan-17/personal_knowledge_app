@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/pkl-store", "src-tauri"]
+resolver = "2"

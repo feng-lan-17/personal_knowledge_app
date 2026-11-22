@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "主窗口可以读写本机图书馆",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "allow-storage-info",
+    "allow-db-get",
+    "allow-db-put",
+    "allow-db-all",
+    "allow-db-remove",
+    "allow-db-meta-get",
+    "allow-db-meta-set",
+    "allow-db-replace-personal",
+    "allow-sync-markdown",
+    "allow-load-markdown"
+  ]
+}
