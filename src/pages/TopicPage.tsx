@@ -13,7 +13,7 @@ export function TopicPage() {
   const lib = useLibrary()
   const [topic, setTopic] = useState<PersonalTopic | null>(null)
   const [highlights, setHighlights] = useState<Highlight[]>([])
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState("未保存")
 
   useEffect(() => {
     document.title = "个人专题 · 私人知识图书馆"
@@ -46,8 +46,8 @@ export function TopicPage() {
 
   return (
     <div className="page" style={{ paddingTop: "1.4rem" }}>
-      <p className="kicker">个人专题</p>
-      <p className="caution">这一版不能在专题里插入图片。可以放摘录、引用和你自己的文字。</p>
+      <p className="topic-status"><span className="kicker">个人专题</span><span className="save-state" data-state={message}>{message}</span></p>
+      <p className="meta">自己的话和引用用不同的排版。不能插入图片。</p>
       <div className="stack" style={{ maxWidth: "40rem", marginTop: "1rem" }}>
         <Input value={topic.title} onChange={(event) => update({ title: event.target.value })} aria-label="专题标题" />
         <Textarea value={topic.description} onChange={(event) => update({ description: event.target.value })} placeholder="这个专题是给你自己看的说明" />
@@ -55,7 +55,7 @@ export function TopicPage() {
           <article key={block.id} className="note-card">
             <p className="meta">{block.kind === "text" ? "自己的话" : "引用"}</p>
             {block.kind === "text" ? (
-              <Textarea value={block.body} onChange={(event) => updateBlock(block.id, { ...block, body: event.target.value })} />
+              <Textarea className="text-block" value={block.body} onChange={(event) => updateBlock(block.id, { ...block, body: event.target.value })} />
             ) : (
               <>
                 <p>「{block.quote}」</p>
@@ -124,16 +124,20 @@ export function TopicPage() {
             </select>
           </label>
         </div>
-        {message ? <p>{message}</p> : null}
+        <aside className="topic-preview" aria-label="预览">
+          <h2>{topic.title}</h2>
+          {topic.blocks.map((block) => block.kind === "text" ? <p key={block.id}>{block.body}</p> : <blockquote key={block.id}>{block.quote}</blockquote>)}
+        </aside>
         <div className="row">
           <Button
             variant="solid"
             onClick={() => {
+              setMessage("正在保存")
               void lib.store.savePersonalTopic(topic).then(() => {
-                setMessage("已写入本地库。")
+                setMessage("已保存")
                 lib.refresh()
                 if (id === "new") navigate(`/me/topics/${topic.id}`, { replace: true })
-              })
+              }).catch(() => setMessage("保存失败"))
             }}
           >
             保存专题

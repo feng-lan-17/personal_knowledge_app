@@ -1,94 +1,118 @@
 import { useEffect, useState } from "react"
-import { Link, useSearchParams } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { COLUMN_NAME } from "../domain/labels.ts"
 import type { Article, SearchHit } from "../domain/types.ts"
-import { Button } from "../components/ui/button.tsx"
-import { Textarea } from "../components/ui/textarea.tsx"
 import { useLibrary } from "../library/context.tsx"
 
 export function AskPage() {
   const lib = useLibrary()
-  const [params] = useSearchParams()
-  const [question, setQuestion] = useState(params.get("q") ?? "")
-  const [hits, setHits] = useState<SearchHit[] | null>(null)
+  const navigate = useNavigate()
+  const [query, setQuery] = useState("")
+  const [hits, setHits] = useState<SearchHit[]>([])
   const [articles, setArticles] = useState<Article[]>([])
-  const [notice, setNotice] = useState("")
-  const status = lib.ai.status()
+  const [active, setActive] = useState(0)
+  const [asked, setAsked] = useState(false)
 
   useEffect(() => {
-    document.title = "AI 搜索 · 私人知识图书馆"
+    document.title = "搜索 · 私人知识图书馆"
     void lib.store.listArticles().then(setArticles)
   }, [lib.store])
 
-  async function run(text: string) {
-    const found = await lib.store.search(text)
-    setHits(found)
-    const result = await lib.ai.complete({
-      question: text,
-      contextArticleIds: found.map((hit) => hit.articleId),
-    })
-    setNotice(result.message)
-  }
+  useEffect(() => {
+    const text = query.trim()
+    if (!text) {
+      setHits([])
+      setAsked(false)
+      return
+    }
+    const timer = window.setTimeout(() => {
+      setAsked(true)
+      void lib.store.search(text).then((next) => {
+        setHits(next)
+        setActive(0)
+      })
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [query, lib.store])
+
+  const current = hits[active]
+  const article = articles.find((item) => item.id === current?.articleId)
 
   return (
-    <div className="page">
-      <header className="search-hero">
-        <p className="kicker">AI 搜索</p>
-        <h1>在本地库里找</h1>
-        <p className="deck">用一句自然语言检索已经在库里的文章。下面的命中是全文检索，不是模型写的回答。</p>
-        <p className="status-line" data-testid="ask-disconnected">
-          AI 服务：{status.headline}。{status.detail}
-        </p>
-      </header>
+    <div className="page search-page">
       <form
-        className="stack"
-        style={{ maxWidth: "42rem", marginTop: "1rem" }}
+        className="search-form"
         onSubmit={(event) => {
           event.preventDefault()
-          if (question.trim()) void run(question.trim())
+          if (current) navigate(`/read/${current.articleId}`)
         }}
       >
-        <Textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：注意力怎样用到上下文" />
-        <div className="row">
-          <Button variant="solid" type="submit">
-            检索本地资料
-          </Button>
-        </div>
+        <input
+          value={query}
+          placeholder="搜索文章、词条、题解"
+          aria-label="搜索文章、词条、题解"
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault()
+              setActive((index) => Math.min(index + 1, hits.length - 1))
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault()
+              setActive((index) => Math.max(index - 1, 0))
+            }
+          }}
+        />
+        <button
+          className="btn btn-solid"
+          type="button"
+          onClick={() => {
+            setAsked(true)
+            setActive(0)
+            void lib.store.search(query.trim()).then(setHits)
+          }}
+        >
+          检索
+        </button>
       </form>
-      {notice ? <p className="caution" style={{ marginTop: "1.2rem" }}>{notice}</p> : null}
-      {hits ? (
-        <section className="section">
-          <h2>相关文章与来源</h2>
-          <p className="meta">候选资料不在这份结果里，它们在发现页。</p>
-          {hits.length === 0 ? <p>库内没有直接命中。</p> : null}
-          {hits.map((hit) => {
-            const article = articles.find((item) => item.id === hit.articleId)
-            return (
-              <article key={hit.articleId} className="hit">
-                <p className="kicker">{COLUMN_NAME[hit.columnId]}</p>
-                <Link to={`/read/${hit.articleId}`}>{hit.title}</Link>
-                <p className="snippet">{hit.snippet}</p>
-                {article?.sources.slice(0, 2).map((source) => (
-                  <p key={source.title} className="meta">
-                    来源：
-                    {source.url ? (
-                      <a href={source.url} target="_blank" rel="noreferrer">
-                        {source.title}
-                      </a>
-                    ) : (
-                      source.title
-                    )}
-                  </p>
-                ))}
-              </article>
-            )
-          })}
-        </section>
-      ) : (
-        <p className="meta" style={{ marginTop: "1rem" }}>
-          还没有提问。
-        </p>
-      )}
+      <p className="meta">命中来自本地全文。生成式回答未连接。回车打开当前条目。</p>
+      <div className="search-split">
+        <ul className="search-list">
+          {hits.map((hit, index) => (
+            <li key={hit.articleId}>
+              <button type="button" className={index === active ? "is-active" : ""} onClick={() => setActive(index)} onDoubleClick={() => navigate(`/read/${hit.articleId}`)}>
+                <strong>{hit.title}</strong>
+                <span>{highlight(hit.snippet, query)}</span>
+                <em>{COLUMN_NAME[hit.columnId]} · 文章 · {articles.find((item) => item.id === hit.articleId)?.applicableVersion ?? "未标版本"}</em>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {current && article ? (
+          <aside className="search-preview">
+            <p className="kicker">{COLUMN_NAME[article.columnId]}</p>
+            <h2>{article.title}</h2>
+            <p>{highlight(current.snippet, query)}</p>
+            <Link to={`/read/${article.id}`}>打开正文</Link>
+          </aside>
+        ) : (
+          <aside className="search-preview">
+            <p>{asked ? "没有命中。" : "输入后在这里预览命中段落。"}</p>
+          </aside>
+        )}
+      </div>
     </div>
+  )
+}
+
+function highlight(text: string, query: string) {
+  const needle = query.trim()
+  const index = text.toLowerCase().indexOf(needle.toLowerCase())
+  if (!needle || index < 0) return text
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark>{text.slice(index, index + needle.length)}</mark>
+      {text.slice(index + needle.length)}
+    </>
   )
 }

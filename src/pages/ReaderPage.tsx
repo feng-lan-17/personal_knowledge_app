@@ -60,28 +60,6 @@ export function ReaderPage() {
     }
   }, [id, lib.store, lib.tick])
 
-  useEffect(() => {
-    if (!reading || !article) return
-    const onScroll = () => {
-      const root = document.scrollingElement
-      if (!root) return
-      const height = root.scrollHeight - root.clientHeight
-      if (height <= 0) return
-      const ratio = root.scrollTop / height
-      void lib.store.saveReading({ ...reading, scrollRatio: ratio })
-    }
-    let timer = 0
-    const listener = () => {
-      window.clearTimeout(timer)
-      timer = window.setTimeout(onScroll, 400)
-    }
-    window.addEventListener("scroll", listener, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", listener)
-      window.clearTimeout(timer)
-    }
-  }, [article, reading, lib.store])
-
   if (missing) return <p className="gate">没有这篇文章。</p>
   if (!article || !reading) return <p className="gate">正在打开文章…</p>
   return <Reader article={article} reading={reading} highlights={highlights} notes={notes} articles={articles} />

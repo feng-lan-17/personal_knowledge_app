@@ -91,6 +91,7 @@ export interface ReadingState {
   favorite: boolean
   lastReadAt: string | null
   scrollRatio: number
+  anchor?: string | null
 }
 
 export interface Highlight {
