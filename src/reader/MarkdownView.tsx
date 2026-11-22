@@ -44,10 +44,10 @@ export function MarkdownView({
             )
           },
           img: ({ src, alt }) => (
-            <figure className="figure">
+            <span className="figure">
               <img src={src ?? ""} alt={alt ?? ""} />
-              {alt ? <figcaption>{alt}</figcaption> : null}
-            </figure>
+              {alt ? <span className="figcaption">{alt}</span> : null}
+            </span>
           ),
         }}
       >

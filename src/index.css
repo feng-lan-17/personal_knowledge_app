@@ -346,9 +346,9 @@ a:hover { color: var(--cinnabar-ink); }
 .prose code { font-family: var(--mono); font-size: 0.88em; }
 .prose p code { background: var(--paper-3); padding: 0.05em 0.28em; }
 .prose .katex-display { overflow-x: auto; overflow-y: hidden; margin: 1em 0; }
-.figure { margin: 1.1em 0 1.3em; }
+.figure { display: block; margin: 1.1em 0 1.3em; }
 .figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: var(--paper-2); }
-.figure figcaption { color: var(--muted); font-family: var(--sans); font-size: 0.82rem; margin-top: 0.4rem; }
+.figure .figcaption { display: block; color: var(--muted); font-family: var(--sans); font-size: 0.82rem; margin-top: 0.4rem; text-indent: 0; }
 mark[data-hl] { background: var(--mark); color: inherit; }
 
 .essay-shell { padding-top: 1.6rem; }
