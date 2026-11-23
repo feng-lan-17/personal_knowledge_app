@@ -20,21 +20,21 @@ export function LibraryPage() {
   const visible = columns.filter((column) => column.id !== "inbox" || articles.some((article) => article.columnId === "inbox"))
 
   return (
-    <div className="page">
-      <header className="search-hero">
-        <p className="kicker">知识库</p>
-        <h1>四栏目录</h1>
-        <p className="deck">每栏是一小节可以读完的示例，不是知识图谱，也不是待办。</p>
+    <div className="page library-page">
+      <header className="shelf-head">
+        <h1>知识库</h1>
+        <p>按领域浏览文章、教材与手册。</p>
       </header>
+      <div className="library-grid">
       {visible.map((column) => {
         const own = articles.filter((article) => article.columnId === column.id)
         return (
-          <section className="section" key={column.id}>
+          <section className="library-card" data-shelf={column.id} key={column.id}>
             <p className="kicker">{column.kicker}</p>
             <h2>
-              <Link to={`/library/${column.id}`}>{column.title}</Link>
+              {column.id === "inbox" ? column.title : <Link to={`/library/${column.id}`}>{column.title} <span aria-hidden="true">↗</span></Link>}
             </h2>
-            <p>{column.intro}</p>
+            <p>{column.summary}</p>
             <ul className="plain-list">
               {own.map((article) => (
                 <li key={article.id}>
@@ -46,6 +46,7 @@ export function LibraryPage() {
           </section>
         )
       })}
+      </div>
     </div>
   )
 }

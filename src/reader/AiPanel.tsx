@@ -73,18 +73,31 @@ export function AiPanel({
   return (
     <aside className="ai-dock" data-testid="ai-panel">
       <header className="ai-top">
+        <h2 className="panel-heading">{tab === "note" ? "页边笔记" : "阅读助手"}</h2>
         <div className="seg" role="tablist">
           <button type="button" aria-selected={tab === "read"} onClick={() => onTab("read")}>AI 助读</button>
           <button type="button" aria-selected={tab === "note"} onClick={() => onTab("note")}>笔记</button>
         </div>
-        <button type="button" onClick={onClose} aria-label="关闭">关闭</button>
+        <button className="panel-close" type="button" onClick={onClose} aria-label="关闭">×</button>
       </header>
       {tab === "read" ? (
         <>
           <div className="ai-scroll">
-            <p className="status-line" data-testid="ask-disconnected">{status.headline}</p>
-            <p>{status.detail}</p>
-            <div className="chips">
+            <div className="assistant-context">
+              <p className="status-line" data-testid="ask-disconnected">{status.connected ? status.headline : "模型未连接"}</p>
+              <p>{status.connected ? status.detail : "模型未连接时，可以先查阅本篇引用的资料。"}</p>
+              {!status.connected && article.sources.some((source) => source.url) && <section className="assist-sources">
+                <h3>本篇参考资料</h3>
+                {article.sources.filter((source) => source.url).map((source) => <a href={source.url} key={source.url + source.title} target="_blank" rel="noreferrer">{source.title}<span aria-hidden="true">↗</span></a>)}
+              </section>}
+              {!status.connected ? (
+                <div className="ai-links">
+                  <Link className="btn btn-solid" to="/ask">检索本地文章</Link>
+                  <Link className="btn" to="/settings#model">模型设置</Link>
+                </div>
+              ) : null}
+            </div>
+            {status.connected ? <div className="chips">
               {useChapter ? <button type="button" onClick={() => setUseChapter(false)}>当前章节 ×</button> : null}
               {useSelection && selection ? <button type="button" onClick={() => setUseSelection(false)}>选中文字 ×</button> : null}
               {extra.map((id) => (
@@ -92,7 +105,7 @@ export function AiPanel({
                   {(articles.find((item) => item.id === id)?.title ?? id).slice(0, 12)} ×
                 </button>
               ))}
-            </div>
+            </div> : null}
             {messages.map((message) => (
               <article key={message.id} className="ai-msg">
                 <p>{message.text}</p>
@@ -103,14 +116,8 @@ export function AiPanel({
                 ))}
               </article>
             ))}
-            {!status.connected ? (
-              <p className="ai-links">
-                <Link to="/settings">配置模型</Link>
-                <Link to="/ask">本地搜索</Link>
-              </p>
-            ) : null}
           </div>
-          <form
+          {status.connected ? <form
             className="ai-compose"
             onSubmit={(event) => {
               event.preventDefault()
@@ -132,15 +139,19 @@ export function AiPanel({
             </select>
             <Textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="就当前章节或选中文字提问" />
             <button type="submit" className="btn btn-solid" disabled={!question.trim()}>发送</button>
-          </form>
+          </form> : null}
         </>
       ) : (
-        <div className="ai-scroll">
-          <p className="save-state" data-state={saveState}>{saveState}</p>
-          <Textarea value={noteDraft} onChange={(event) => onNoteDraft(event.target.value)} placeholder="写在这篇旁边的笔记" />
-          <button type="button" className="btn btn-solid" onClick={onSaveNote} disabled={!noteDraft.trim()}>保存笔记</button>
+        <div className="ai-scroll notebook">
+          <div className="note-sheet"><label htmlFor="reader-note">写下想法</label>
+          <Textarea id="reader-note" value={noteDraft} onChange={(event) => onNoteDraft(event.target.value)} placeholder="写在这篇旁边的笔记" />
+          <div className="note-footer"><span role="status" className="meta">{saveState}</span>
+          <button type="button" className="btn btn-solid" onClick={onSaveNote} disabled={!noteDraft.trim() || saveState === "正在保存"}>保存笔记</button>
+          </div>
+          </div>
+          {notes.length > 0 && <h3>本篇笔记 · {notes.length}</h3>}
           {notes.map((note) => (
-            <article key={note.id} className="note-card"><p>{note.body}</p></article>
+            <article key={note.id} className="note-card"><time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleDateString("zh-CN")}</time><p>{note.body}</p></article>
           ))}
         </div>
       )}

@@ -1,20 +1,18 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { COLUMN_NAME } from "../domain/labels.ts"
 import type { Article, Discovery, ReadingState } from "../domain/types.ts"
 import { useLibrary } from "../library/context.tsx"
 
 const SHELVES = [
-  { id: "llm", href: "/library/llm", title: "大模型", how: "两条阅读路线，外加可查的百科" },
-  { id: "essay", href: "/library/essay", title: "散文", how: "一篇主稿，其余按作者或主题查阅" },
-  { id: "csp", href: "/library/csp", title: "CSP", how: "算法手册，题解可以按主题筛选" },
-  { id: "gs", href: "/library/gs", title: "高斯溅射", how: "查参数、排查现象、核对来源" },
+  { id: "llm", href: "/library/llm", title: "大模型", how: "双路线教材与百科", symbol: "✳" },
+  { id: "essay", href: "/library/essay", title: "散文", how: "按作者或主题阅读", symbol: "文" },
+  { id: "csp", href: "/library/csp", title: "CSP", how: "算法专题与题解", symbol: "{ }" },
+  { id: "gs", href: "/library/gs", title: "高斯溅射", how: "技术手册、排查与前沿", symbol: "◉" },
 ] as const
 
 const PICKS = [
-  { href: "/read/llm-dialogue", title: "从一次对话看懂模型", why: "先看清发送之后实际发生的四步，再决定要不要读公式。" },
   { href: "/read/llm-build", title: "注意力与一次训练", why: "只保留读 Transformer 时躲不开的缩放点积，不绑某个框架的版本。" },
-  { href: "/read/essay-rain", title: "雨落在旧车站的铁皮顶上", why: "原创散文，适合把工具收起来读完。不是任何出版作品的摘录。" },
+  { href: "/library/csp/p/P1047", title: "一道题读懂区间模拟", why: "把道路上的树转成数组，用一段小程序解释区间标记。" },
   { href: "/library/gs/trouble", title: "重影和漂浮碎块", why: "先对上同一视角里的现象，再看可能原因，而不是先背接口名。" },
 ]
 
@@ -50,50 +48,56 @@ export function HomePage() {
 
   return (
     <div className="page home-page">
-      {continueArticle ? (
+      <div className="edition-heading">
+        <h1>编辑精选</h1>
+        {continueArticle ? (
         <p className="continue" data-testid="continue-reading">
           <span>继续阅读</span>
           <Link to={`/read/${continueArticle.id}`}>{continueArticle.title}</Link>
           <em>{latest?.anchor || continueArticle.path.at(-1) || "开头"}</em>
         </p>
-      ) : null}
+        ) : null}
+      </div>
 
       <section className="cover" data-testid="home-hero">
         <Link className="cover-main" to={`/read/${cover.id}`}>
-          <img src="/figures/gs-cover.svg" alt="许多椭球叠成的室内一角，用来说明三维高斯溅射在画什么" />
           <div className="cover-copy">
-            <p className="kicker">{COLUMN_NAME[cover.columnId]}</p>
-            <h1>{cover.title}</h1>
-            <p className="clamp">{cover.summary}</p>
-            <span className="read-entry">阅读这篇</span>
+            <p className="kicker">高斯溅射 · 原理</p>
+            <h2>用一组椭球<br />把场景画出来</h2>
+            <p>从稀疏点到可从新视角观看的三维场景，理解高斯如何叠加成像。</p>
+            <span className="read-entry">阅读文章 <span aria-hidden="true">↗</span></span>
           </div>
+          <img src="/figures/reading-room-cover.webp" alt="" />
         </Link>
         <div className="cover-side">
           <Link className="side-essay" to={`/read/${essay.id}`}>
             <p className="kicker">散文</p>
             <h2>{essay.title}</h2>
-            <p className="by">{essay.author}</p>
             <p>{essay.subtitle}</p>
+            <span className="story-arrow" aria-hidden="true">↗</span>
           </Link>
           <Link className="side-note" to={`/read/${second.id}`}>
             <p className="kicker">大模型</p>
-            <h2>{second.title}</h2>
+            <h2>从一次对话看懂模型</h2>
             <p>{second.subtitle}</p>
+            <span className="story-arrow" aria-hidden="true">↗</span>
           </Link>
         </div>
       </section>
 
+      <div className="section-heading"><h2>浏览书架</h2><Link to="/library">全部文章 <span aria-hidden="true">↗</span></Link></div>
       <nav className="shelf-row" aria-label="四个书架">
         {SHELVES.map((shelf) => (
-          <Link key={shelf.id} to={shelf.href}>
-            <strong>{shelf.title}</strong>
-            <span>{shelf.how}</span>
+          <Link key={shelf.id} to={shelf.href} data-shelf={shelf.id}>
+            <span className="shelf-symbol" aria-hidden="true">{shelf.symbol}</span>
+            <div><strong>{shelf.title}</strong><span>{shelf.how}</span></div>
+            <span className="shelf-arrow" aria-hidden="true">↗</span>
           </Link>
         ))}
       </nav>
 
       <section className="picks">
-        <h2>值得先打开</h2>
+        <h2>继续探索</h2>
         <ol>
           {PICKS.map((pick) => (
             <li key={pick.href}>
@@ -105,10 +109,9 @@ export function HomePage() {
       </section>
 
       <section className="updates">
-        <h2>来源与更新</h2>
-        <p className="meta">这里是候选和入口，不是已经审定的教材。</p>
+        <div className="section-heading"><h2>资料线索</h2><Link to="/discover">查看发现 <span aria-hidden="true">↗</span></Link></div>
         <ul>
-          {discoveries.map((item) => (
+          {[...discoveries].sort((a, b) => b.addedAt.localeCompare(a.addedAt)).map((item) => (
             <li key={item.id}>
               <time>{item.addedAt}</time>
               <Link to={`/discover/${item.id}`}>{item.title}</Link>

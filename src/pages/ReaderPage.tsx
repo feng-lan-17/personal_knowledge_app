@@ -62,5 +62,5 @@ export function ReaderPage() {
 
   if (missing) return <p className="gate">没有这篇文章。</p>
   if (!article || !reading) return <p className="gate">正在打开文章…</p>
-  return <Reader article={article} reading={reading} highlights={highlights} notes={notes} articles={articles} />
+  return <Reader key={article.id} article={article} reading={reading} highlights={highlights} notes={notes} articles={articles} />
 }

@@ -5,47 +5,76 @@ import { useLibrary } from "../../library/context.tsx"
 
 export function EssayShelf() {
   const lib = useLibrary()
-  const [articles, setArticles] = useState<Article[]>([])
-  const [by, setBy] = useState<"theme" | "author">("theme")
+  const [articles, setArticles] = useState<(Article & { excerpt: string })[]>([])
+  const [by, setBy] = useState<"picks" | "theme" | "author">("picks")
+  const lead = articles.find((article) => article.id === "essay-rain") ?? articles[0]
 
   useEffect(() => {
     document.title = "散文 · 私人知识图书馆"
-    void lib.store.listArticles().then((all) => setArticles(all.filter((article) => article.columnId === "essay")))
+    let cancelled = false
+    void lib.store.listArticles({ columnId: "essay" }).then(async (all) => {
+      const rows = await Promise.all(all.filter((article) => article.layout === "immersive").map(async (article) => {
+        const page = await lib.store.getArticle(article.id)
+        const opening = page?.body.split(/\r?\n/).find((line) => line.trim() && !/^[#>]/.test(line.trim()))
+        return { ...article, excerpt: opening?.trim().slice(0, 180) || article.summary }
+      }))
+      if (!cancelled) setArticles(rows)
+    })
+    return () => { cancelled = true }
   }, [lib.store, lib.tick])
 
-  const feature = articles.find((article) => article.id === "essay-rain")
-  const rest = articles.filter((article) => article.id !== "essay-rain")
+  const groups = new Map<string, typeof articles>()
+  for (const article of articles) {
+    const key = by === "author" ? article.author : article.path.at(-1) || "其他"
+    const group = groups.get(key)
+    if (group) group.push(article)
+    else groups.set(key, [article])
+  }
 
   return (
     <div className="page shelf essay-shelf">
-      <header className="essay-feature">
-        <p className="kicker">这一期</p>
-        {feature ? (
-          <>
-            <h1><Link to={`/read/${feature.id}`}>{feature.title}</Link></h1>
-            <p className="by">{feature.author}</p>
-            <p className="lede">{feature.subtitle}</p>
-          </>
-        ) : null}
+      <header className="essay-index-head">
+        <h1>散文随笔</h1>
+        <div className="catalog-switch" role="group" aria-label="作品分组">
+          <button type="button" aria-pressed={by === "picks"} onClick={() => setBy("picks")}>选读</button>
+          <button type="button" aria-pressed={by === "theme"} onClick={() => setBy("theme")}>按主题</button>
+          <button type="button" aria-pressed={by === "author"} onClick={() => setBy("author")}>按作者</button>
+        </div>
       </header>
-      <div className="catalog-switch">
-        <button type="button" aria-pressed={by === "theme"} onClick={() => setBy("theme")}>按主题</button>
-        <button type="button" aria-pressed={by === "author"} onClick={() => setBy("author")}>按作者</button>
-      </div>
-      {by === "theme" ? (
-        <ul className="catalog">
-          <li><span>故乡 / 时间</span><Link to="/read/essay-rain">雨落在旧车站的铁皮顶上</Link></li>
-          <li><span>生命</span><Link to="/read/essay-lamp">灯还没有灭</Link></li>
-          {rest.filter((article) => article.id === "essay-lamp").length === 0 ? null : null}
-        </ul>
-      ) : (
-        <ul className="catalog">
-          <li><span>本库</span><Link to="/read/essay-rain">雨落在旧车站的铁皮顶上</Link></li>
-          <li><span>本库</span><Link to="/read/essay-lamp">灯还没有灭</Link></li>
-          <li><span>书目</span><Link to="/library/essay/authors">江南、史铁生</Link></li>
-        </ul>
-      )}
-      <p className="meta">两篇正文是原创示例，可以在这里读完。出版作品的全文不在本库。</p>
+      {by === "picks" && lead ? (
+        <div className="essay-spread">
+          <Link className="lead-story" to={"/read/" + lead.id}>
+            {lead.id === "essay-rain" && <img src="/figures/rain-platform.webp" alt="" />}
+            <small>{lead.path.at(-1)} · {lead.readingMinutes} 分钟</small>
+            <h2>{lead.title}</h2>
+            <p>{lead.excerpt}</p>
+            <span className="essay-open">阅读全文 →</span>
+          </Link>
+          <div className="short-reads">
+            {articles.filter((item) => item.id !== lead.id).map((item) => (
+              <Link key={item.id} to={"/read/" + item.id}>
+                <small>{item.path.at(-1)} · {item.readingMinutes} 分钟</small>
+                <h2>{item.title}</h2>
+                <p>{item.excerpt}</p>
+                <span className="essay-open">阅读全文 →</span>
+              </Link>
+            ))}
+            <Link className="author-index-link" to="/library/essay/authors"><small>作者书目</small><strong>江南与史铁生 ↗</strong></Link>
+          </div>
+        </div>
+      ) : Array.from(groups, ([group, rows]) => (
+        <section className="essay-group" key={group}>
+          <h2>{group}</h2>
+          <div>{rows.map((article) => (
+            <Link className="essay-entry" key={article.id} to={"/read/" + article.id}>
+              <h3>{article.title}</h3>
+              <p>{article.excerpt}</p>
+              <small>{by === "theme" ? article.author : article.path.at(-1)} · {article.readingMinutes} 分钟</small>
+            </Link>
+          ))}</div>
+        </section>
+      ))}
+      {by !== "picks" && <aside className="essay-bibliography"><span>作者书目</span><Link to="/library/essay/authors">江南与史铁生 ↗</Link></aside>}
     </div>
   )
 }

@@ -21,34 +21,48 @@ export function LlmShelf() {
   const buildRoute = topics.filter((topic) => topic.parentId === "llm-build")
 
   return (
-    <div className="page shelf" data-testid="llm-shelf">
+    <div className="page shelf llm-shelf" data-testid="llm-shelf">
       <header className="shelf-head">
         <p className="kicker">教材书架</p>
         <h1>大模型</h1>
-        <p>两条路线可以来回走。百科单独放在旁边，词条先给一句解释和一个例子。</p>
+        <p>从日常使用到模型构建，选一条路线开始。</p>
       </header>
       <div className="route-board">
         <RouteCard
           title="认识与使用"
           article={articles.find((item) => item.id === "llm-dialogue")}
           topics={useRoute}
+          articles={articles}
         />
         <RouteCard
           title="理解与构建"
           article={articles.find((item) => item.id === "llm-build")}
           topics={buildRoute}
+          articles={articles}
         />
         <Link className="ency-entry" to="/library/llm/encyclopedia">
           <p className="kicker">百科</p>
-          <strong>先看一句解释</strong>
+          <strong>概念索引 ↗</strong>
           <span>{GLOSSARY.slice(0, 3).map((entry) => entry.term).join(" · ")}</span>
         </Link>
       </div>
+      <section className="llm-glossary">
+        <div className="section-heading"><h2>从概念入手</h2><Link to="/library/llm/encyclopedia">查看百科 ↗</Link></div>
+        <ul className="plain-list">
+          {GLOSSARY.slice(0, 3).map((entry) => (
+            <li key={entry.id}>
+              <Link to={`/library/llm/encyclopedia/${entry.id}`}>{entry.term}</Link>
+              <p>{entry.gloss}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
 
-function RouteCard({ title, article, topics }: { title: string; article?: Article; topics: Topic[] }) {
+function RouteCard({ title, article, topics, articles }: { title: string; article?: Article; topics: Topic[]; articles: Article[] }) {
+  const routeArticles = articles.filter((item) => item.id !== article?.id && topics.some((topic) => topic.id === item.primaryTopicId))
   return (
     <section className="route-card">
       <h2>{title}</h2>
@@ -59,13 +73,11 @@ function RouteCard({ title, article, topics }: { title: string; article?: Articl
         </Link>
       ) : null}
       <ul>
-        {topics.map((topic) => (
-          <li key={topic.id}>
-            <Link to={article ? `/read/${article.id}` : "/library/llm"}>{topic.title}</Link>
-            <span>{topic.summary}</span>
-          </li>
+        {routeArticles.map((item) => (
+          <li key={item.id}><Link to={`/read/${item.id}`}>{item.title}</Link></li>
         ))}
       </ul>
+      <p className="meta">{topics.map((topic) => topic.title).join(" · ")}</p>
     </section>
   )
 }

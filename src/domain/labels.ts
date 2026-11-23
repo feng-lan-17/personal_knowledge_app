@@ -23,9 +23,9 @@ export function formatEditionDate(isoDate: string): string {
 }
 
 export function measureWidth(measure: "narrow" | "comfort" | "wide"): string {
-  if (measure === "narrow") return "34rem"
-  if (measure === "wide") return "46rem"
-  return "40rem"
+  if (measure === "narrow") return "40rem"
+  if (measure === "wide") return "58rem"
+  return "50rem"
 }
 
 const ARTICLE_ORDER = [

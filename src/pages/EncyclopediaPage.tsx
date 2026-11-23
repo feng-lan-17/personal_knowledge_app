@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../components/ui/dialog.tsx"
 import { GLOSSARY, glossaryById } from "../content/glossary.ts"
 
 export function EncyclopediaPage() {
@@ -57,18 +58,17 @@ export function TermPopover({
   onClose: () => void
 }) {
   const entry = glossaryById(termId)
-  const [open, setOpen] = useState(true)
-  if (!entry || !open) return null
+  if (!entry) return null
   return (
-    <aside className="term-pop" role="dialog" aria-label={entry.term}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}><DialogContent>
       <p className="kicker">释义</p>
-      <strong>{entry.term}</strong>
-      <p>{entry.gloss}</p>
+      <DialogTitle>{entry.term}</DialogTitle>
+      <DialogDescription>{entry.gloss}</DialogDescription>
       <p className="meta">例如：{entry.example}</p>
       <p className="row">
         <Link to={`/library/llm/encyclopedia/${entry.id}?from=${encodeURIComponent(from)}`}>完整词条</Link>
-        <button type="button" onClick={() => { setOpen(false); onClose() }}>回到原文</button>
+        <button type="button" className="btn" onClick={onClose}>回到原文</button>
       </p>
-    </aside>
+    </DialogContent></Dialog>
   )
 }

@@ -15,40 +15,41 @@ export function DiscoverPage() {
   }, [lib.store])
 
   const current = items.find((item) => item.id === id)
-  const latest = items.filter((item) => item.section === "latest")
+  const latest = items.filter((item) => item.section === "latest").sort((a, b) => b.addedAt.localeCompare(a.addedAt))
   const featured = items.filter((item) => item.section === "featured")
 
   return (
-    <div className="page">
-      <header className="search-hero">
-        <p className="kicker">发现</p>
-        <h1>候选与入口</h1>
-        <p className="caution">这里的条目不是经过审核的教材。教材在知识库里，并标有示例或书目的性质。</p>
-      </header>
+    <div className="page discover-page">
       {current ? (
-        <section className="section">
-          <p className="kicker">单条线索</p>
-          <h2>{current.title}</h2>
-          <p>{current.summary}</p>
-          <p className="caution">{current.caution}</p>
-          <p>
-            <a href={current.sourceUrl} target="_blank" rel="noreferrer">
-              {current.sourceTitle}
-            </a>
-          </p>
-          <p className="meta">收录于 {current.addedAt}。之后没有自动巡检。</p>
-          {current.columnHint ? <p><Link to={`/library/${current.columnHint}`}>回到{COLUMN_NAME[current.columnHint]}</Link></p> : null}
-        </section>
-      ) : null}
-      <section className="section">
-        <h2>最新发现</h2>
-        <ItemList items={latest} />
-      </section>
-      <section className="section">
-        <h2>精选分区</h2>
-        <p className="meta">精选的是可以反复使用的入口，仍然不是教材。</p>
-        <ItemList items={featured} />
-      </section>
+        <article className="discovery-detail">
+          <Link to="/discover">← 发现</Link>
+          <p className="kicker">{current.section === "latest" ? "候选资料" : "精选来源"} · {current.addedAt}</p>
+          <h1>{current.title}</h1>
+          <p className="deck">{current.summary}</p>
+          <p>{current.caution}</p>
+          <div className="row">
+            <a className="btn btn-solid" href={current.sourceUrl} target="_blank" rel="noreferrer">{current.sourceTitle} ↗</a>
+            {current.columnHint ? <Link className="btn" to={`/library/${current.columnHint}`}>浏览{COLUMN_NAME[current.columnHint]}</Link> : null}
+          </div>
+        </article>
+      ) : (
+        <>
+          <header className="search-hero">
+            <h1>发现</h1>
+            <p className="deck">浏览原始资料，找到值得进一步阅读的线索。</p>
+          </header>
+          <div className="discover-grid">
+            <section className="section">
+              <h2>候选资料</h2>
+              <ItemList items={latest} />
+            </section>
+            <section className="section">
+              <h2>精选来源</h2>
+              <ItemList items={featured} />
+            </section>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -58,6 +59,7 @@ function ItemList({ items }: { items: Discovery[] }) {
     <ul className="plain-list">
       {items.map((item) => (
         <li key={item.id}>
+          <p className="kicker">{item.columnHint ? COLUMN_NAME[item.columnHint] : item.sourceTitle} · {item.addedAt}</p>
           <Link to={`/discover/${item.id}`}>{item.title}</Link>
           <p className="meta">{item.summary}</p>
         </li>
