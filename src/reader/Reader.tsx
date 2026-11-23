@@ -6,6 +6,7 @@ import type { Article, Highlight, Note, ReadingState } from "../domain/types.ts"
 import { useLibrary } from "../library/context.tsx"
 import { TermPopover } from "../pages/EncyclopediaPage.tsx"
 import type { ArticlePage } from "../storage/repository.ts"
+import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog.tsx"
 import { AiPanel } from "./AiPanel.tsx"
 import { MarkdownView } from "./MarkdownView.tsx"
 import { preserveView } from "./preserve.ts"
@@ -26,7 +27,28 @@ export function Reader({
   const lib = useLibrary()
   const location = useLocation()
   const immersive = article.layout === "immersive"
-  const [tocOpen, setTocOpen] = useState(!immersive)
+  const [tocOpen, setTocOpen] = useState(false)
+  const chapterButton = useRef<HTMLButtonElement>(null)
+  const chapterContainer = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!tocOpen) return
+    function dismiss(event: PointerEvent) {
+      if (!chapterContainer.current?.contains(event.target as Node)) setTocOpen(false)
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.stopPropagation()
+        setTocOpen(false)
+        chapterButton.current?.focus()
+      }
+    }
+    document.addEventListener("pointerdown", dismiss)
+    document.addEventListener("keydown", escape, true)
+    return () => {
+      document.removeEventListener("pointerdown", dismiss)
+      document.removeEventListener("keydown", escape, true)
+    }
+  }, [tocOpen])
   const [aiOpen, setAiOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [lookOpen, setLookOpen] = useState(false)
@@ -35,6 +57,7 @@ export function Reader({
   const [panelTab, setPanelTab] = useState<"read" | "note">("read")
   const [active, setActive] = useState("")
   const [activeId, setActiveId] = useState("")
+  const panelTrigger = useRef<HTMLElement | null>(null)
   const readingRef = useRef(reading)
   readingRef.current = reading
   const [termId, setTermId] = useState<string | null>(null)
@@ -44,7 +67,7 @@ export function Reader({
   const toc = extractToc(article.body)
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 1100px)")
+    const media = window.matchMedia("(max-width: 1180px)")
     const apply = () => {
       setNarrow(media.matches)
       if (media.matches) setTocOpen(false)
@@ -83,10 +106,13 @@ export function Reader({
   useEffect(() => {
     const onUp = () => {
       const sel = window.getSelection()
-      const root = document.querySelector(".reader-column")
-      if (!sel || sel.isCollapsed || !root || !sel.anchorNode || !root.contains(sel.anchorNode)) return
+      const root = document.querySelector(".reader-column .prose")
+      if (!sel?.anchorNode || sel.isCollapsed || !root || !root.contains(sel.anchorNode) || !root.contains(sel.focusNode)) {
+        setBar(null)
+        return
+      }
       const quote = sel.toString().replace(/\s+/g, " ").trim()
-      if (quote.length < 2) return
+      if (quote.length < 2) { setBar(null); return }
       let prefix = ""
       let suffix = ""
       if (sel.anchorNode === sel.focusNode && sel.anchorNode.nodeType === Node.TEXT_NODE) {
@@ -98,10 +124,15 @@ export function Reader({
       }
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       setSelection(quote)
-      setBar({ x: Math.max(8, rect.left), y: Math.max(8, rect.top - 42), quote, prefix, suffix })
+      setBar({ x: Math.max(8, Math.min(rect.left, window.innerWidth - 172)), y: Math.max(8, rect.top - 42), quote, prefix, suffix })
     }
     document.addEventListener("mouseup", onUp)
-    return () => document.removeEventListener("mouseup", onUp)
+    const hide = () => setBar(null)
+    window.addEventListener("scroll", hide, { passive: true })
+    return () => {
+      document.removeEventListener("mouseup", onUp)
+      window.removeEventListener("scroll", hide)
+    }
   }, [article.id])
 
   async function saveReading(patch: Partial<ReadingState>) {
@@ -123,56 +154,90 @@ export function Reader({
     window.setTimeout(() => node.classList.remove("cite-flash"), 1200)
   }
 
+  function openPanel(tab: "read" | "note", trigger?: HTMLElement) {
+    if (trigger) panelTrigger.current = trigger
+    setPanelTab(tab)
+    if (!aiOpen) preserveView(() => setAiOpen(true))
+  }
+
+  function closePanel() {
+    preserveView(() => setAiOpen(false))
+    panelTrigger.current?.focus({ preventScroll: true })
+  }
+
   const aiMode = aiOpen ? (narrow ? "drawer" : "dock") : "off"
-  const showToc = tocOpen && !immersive && toc.length > 0
+  const hasChapters = toc.length > 0
+  const showToc = narrow && tocOpen && hasChapters
+  const sideToc = !narrow && hasChapters
+  const chapters = (
+    <ol>
+      {toc.map((item) => (
+        <li key={item.id}>
+          <a href={`#${item.id}`} data-depth={item.depth} data-active={activeId === item.id}
+            aria-current={activeId === item.id ? "location" : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              jump(item.id)
+              if (narrow) {
+                setTocOpen(false)
+                chapterButton.current?.focus({ preventScroll: true })
+              }
+            }}>{item.text}</a>
+        </li>
+      ))}
+    </ol>
+  )
 
   return (
-    <article className="reader-page">
+    <article className="reader-page" data-layout={immersive ? "essay" : "technical"} onKeyDown={(event) => {
+      if (event.key === "Escape" && aiOpen) closePanel()
+    }}>
       <header className="reader-bar">
         <div className="reader-path">
-          <Link to={article.columnId === "inbox" ? "/library" : `/library/${article.columnId}`}>返回</Link>
-          <span>{article.path.join(" / ") || COLUMN_NAME[article.columnId]}</span>
+          <Link to={article.columnId === "inbox" ? "/library" : `/library/${article.columnId}`}>← {COLUMN_NAME[article.columnId]}</Link>
+          {narrow && hasChapters && <div className="chapter-anchor" ref={chapterContainer} onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setTocOpen(false)
+          }}>
+            <button ref={chapterButton} type="button" className="chapter-button" aria-expanded={showToc} aria-controls="chapter-menu" onClick={() => setTocOpen(!tocOpen)}>章节目录 <span aria-hidden="true">⌄</span></button>
+        {showToc ? (
+          <nav className="chapter-menu" id="chapter-menu" aria-label="章节目录">
+            <p className="side-label">文章目录</p>
+            {chapters}
+          </nav>
+        ) : null}
+          </div>}
         </div>
         {immersive ? (
           <div className="reader-actions">
-            <button type="button" aria-pressed={lookOpen} onClick={() => setLookOpen((value) => !value)}>外观</button>
+            <button type="button" data-appearance aria-haspopup="dialog" aria-expanded={lookOpen} onClick={() => setLookOpen((value) => !value)}>外观</button>
             <button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>更多</button>
           </div>
         ) : (
           <div className="reader-actions">
-            <button type="button" aria-pressed={showToc} onClick={() => preserveView(() => setTocOpen((value) => !value))}>目录</button>
-            <button type="button" aria-pressed={lookOpen} onClick={() => setLookOpen((value) => !value)}>外观</button>
+            <button type="button" data-appearance aria-haspopup="dialog" aria-expanded={lookOpen} onClick={() => setLookOpen((value) => !value)}>外观</button>
             <button type="button" aria-pressed={reading.favorite} onClick={() => void saveReading({ favorite: !reading.favorite })}>
               {reading.favorite ? "已收藏" : "收藏"}
             </button>
-            <button type="button" aria-pressed={aiOpen && panelTab === "note"} onClick={() => { setPanelTab("note"); preserveView(() => setAiOpen(true)) }}>笔记</button>
-            <button type="button" aria-pressed={aiOpen && panelTab === "read"} data-testid="open-ai" onClick={() => { setPanelTab("read"); preserveView(() => setAiOpen(true)) }}>AI</button>
+            <button type="button" aria-pressed={aiOpen && panelTab === "note"} onClick={(event) => openPanel("note", event.currentTarget)}>笔记</button>
+            <button type="button" className="ai-trigger" aria-pressed={aiOpen && panelTab === "read"} data-testid="open-ai" onClick={(event) => openPanel("read", event.currentTarget)}>AI 助读</button>
           </div>
         )}
       </header>
-      {saveState ? <p className="save-state" data-state={saveState}>{saveState}</p> : null}
+      {saveState && !(aiOpen && panelTab === "note") ? <p role="status" className="save-state" data-state={saveState}>{saveState}</p> : null}
       {lookOpen ? <Appearance onClose={() => setLookOpen(false)} /> : null}
       {moreOpen ? (
         <div className="more-menu">
           <button type="button" onClick={() => void saveReading({ favorite: !reading.favorite })}>{reading.favorite ? "取消收藏" : "收藏"}</button>
-          <button type="button" onClick={() => { setPanelTab("note"); setAiOpen(true); setMoreOpen(false) }}>笔记</button>
+          <button type="button" onClick={() => openPanel("note")}>笔记</button>
+          <button type="button" onClick={() => openPanel("read")}>AI 助读</button>
           <button type="button" onClick={() => void exportMarkdown(lib.store, article.id)}>导出</button>
         </div>
       ) : null}
-      <div className="reader-stage" data-toc={showToc ? "on" : "off"} data-ai={aiMode} data-testid={immersive ? "reader-essay-shell" : "reader-technical"}>
-        {showToc ? (
-          <nav className="toc" aria-label="章节目录">
-            <ol>
-              {toc.map((item) => (
-                <li key={item.id}>
-                  <a href={`#${item.id}`} data-depth={item.depth} data-active={activeId === item.id} onClick={(event) => { event.preventDefault(); jump(item.id) }}>
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        ) : null}
+      <div className="reader-stage" data-toc={sideToc ? "on" : "off"} data-ai={aiMode} data-testid={immersive ? "reader-essay-shell" : "reader-technical"}>
+        {sideToc && <nav className="chapter-rail" aria-label="章节目录">
+          <p>文章目录</p>
+          {chapters}
+        </nav>}
         <div className="reader-column">
           {immersive ? (
             <header className="essay-title">
@@ -181,6 +246,7 @@ export function Reader({
             </header>
           ) : (
             <header className="tech-title">
+              <p className="kicker">{COLUMN_NAME[article.columnId]} · {article.readingMinutes} 分钟</p>
               <h1>{article.title}</h1>
               <p className="lede">{article.summary}</p>
             </header>
@@ -225,7 +291,7 @@ export function Reader({
             noteDraft={noteDraft}
             onNoteDraft={setNoteDraft}
             saveState={saveState}
-            onClose={() => preserveView(() => setAiOpen(false))}
+            onClose={closePanel}
             onJump={jump}
             tab={panelTab}
             onTab={setPanelTab}
@@ -246,7 +312,7 @@ export function Reader({
           />
         ) : null}
       </div>
-      {bar && (immersive ? true : true) ? (
+      {bar ? (
         <div className="selection-bar" style={{ left: bar.x, top: bar.y }}>
           <button type="button" className="btn" onMouseDown={(event) => event.preventDefault()} onClick={() => {
             void (async () => {
@@ -261,9 +327,11 @@ export function Reader({
               }
             })()
           }}>划线</button>
-          {!immersive || selection ? (
-            <button type="button" className="btn" onMouseDown={(event) => event.preventDefault()} onClick={() => { setNoteDraft(bar.quote); setAiOpen(true); setBar(null) }}>摘入笔记</button>
-          ) : null}
+          <button type="button" className="btn" onMouseDown={(event) => event.preventDefault()} onClick={() => {
+            setNoteDraft(bar.quote)
+            openPanel("note")
+            setBar(null)
+          }}>摘入笔记</button>
         </div>
       ) : null}
     </article>
@@ -273,14 +341,22 @@ export function Reader({
 function Appearance({ onClose }: { onClose: () => void }) {
   const lib = useLibrary()
   return (
-    <div className="look-menu">
-      <button type="button" aria-pressed={lib.prefs.theme === "paper"} onClick={() => void lib.updatePrefs({ ...lib.prefs, theme: "paper" })}>纸色</button>
-      <button type="button" aria-pressed={lib.prefs.theme === "night"} onClick={() => void lib.updatePrefs({ ...lib.prefs, theme: "night" })}>夜读</button>
-      <button type="button" onClick={() => void lib.updatePrefs({ ...lib.prefs, fontScale: 0.94 })}>小</button>
-      <button type="button" onClick={() => void lib.updatePrefs({ ...lib.prefs, fontScale: 1 })}>中</button>
-      <button type="button" onClick={() => void lib.updatePrefs({ ...lib.prefs, fontScale: 1.12 })}>大</button>
-      <button type="button" onClick={onClose}>收起</button>
-    </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="appearance-dialog" aria-describedby={undefined} onCloseAutoFocus={(event) => {
+        event.preventDefault()
+        document.querySelector<HTMLButtonElement>(".reader-actions [data-appearance]")?.focus({ preventScroll: true })
+      }}>
+        <DialogTitle>阅读外观</DialogTitle>
+        <fieldset><legend>底色</legend><div className="option-group">
+          {(["paper", "night"] as const).map((theme) => <button key={theme} type="button" aria-pressed={lib.prefs.theme === theme} onClick={() => void lib.updatePrefs({ ...lib.prefs, theme })}>{theme === "paper" ? "日间" : "夜读"}</button>)}
+        </div></fieldset>
+        <fieldset><legend>字号</legend><div className="option-group">
+          {[0.94, 1, 1.12].map((fontScale, index) => <button type="button" key={fontScale} aria-pressed={lib.prefs.fontScale === fontScale} onClick={() => void lib.updatePrefs({ ...lib.prefs, fontScale })}>{["小", "中", "大"][index]}</button>)}
+        </div></fieldset>
+        <p className="appearance-sample">翻到下一页，接着上次读到的地方。</p>
+        <button className="btn btn-solid" type="button" onClick={onClose}>返回阅读</button>
+      </DialogContent>
+    </Dialog>
   )
 }
 

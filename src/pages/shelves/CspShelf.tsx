@@ -11,10 +11,10 @@ export function CspShelf() {
   }, [])
   const rows = PROBLEMS.filter((problem) => filter === "all" || problem.topic === filter)
   return (
-    <div className="page shelf">
+    <div className="page shelf csp-shelf">
       <header className="shelf-head">
         <p className="kicker">算法手册</p>
-        <h1>CSP</h1>
+        <h1>CSP 算法与题解</h1>
       </header>
       <div className="algo-open">
         <article>
@@ -36,7 +36,8 @@ export function CspShelf() {
           <Link to="/read/csp-search">阅读搜索与规划</Link>
         </article>
       </div>
-      <div className="filter-row" role="tablist" aria-label="按主题筛选">
+      <h2 className="shelf-section-title">题解索引</h2>
+      <div className="filter-row" role="group" aria-label="按主题筛选">
         {FILTERS.map((item) => (
           <button key={item} type="button" aria-pressed={filter === item} onClick={() => setFilter(item)}>
             {item === "all" ? "全部" : PROBLEM_TOPIC[item]}

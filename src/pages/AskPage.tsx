@@ -40,6 +40,7 @@ export function AskPage() {
 
   return (
     <div className="page search-page">
+      <header className="shelf-head"><h1>全文检索</h1></header>
       <form
         className="search-form"
         onSubmit={(event) => {
@@ -49,8 +50,8 @@ export function AskPage() {
       >
         <input
           value={query}
-          placeholder="搜索文章、词条、题解"
-          aria-label="搜索文章、词条、题解"
+          placeholder="输入文章标题或正文关键词"
+          aria-label="搜索文章"
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
@@ -74,7 +75,7 @@ export function AskPage() {
           检索
         </button>
       </form>
-      <p className="meta">命中来自本地全文。生成式回答未连接。回车打开当前条目。</p>
+      <p className="meta">在本地文章中检索。按回车打开当前条目。</p>
       <div className="search-split">
         <ul className="search-list">
           {hits.map((hit, index) => (

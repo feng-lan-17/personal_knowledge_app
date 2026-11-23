@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 const ACTIONS = [
   { href: "/read/gs-basics", title: "查参数", text: "均值、协方差、不透明度和叠加公式。" },
   { href: "/library/gs/trouble", title: "排查问题", text: "先对上重影或漂浮碎块，再看原因。" },
-  { href: "/library/gs/frontier", title: "看前沿", text: "来源、发表时间和核验状态，不装成新闻。" },
+  { href: "/library/gs/frontier", title: "看前沿", text: "论文、项目与文档的原始出处。" },
 ]
 
 export function GsShelf() {
@@ -12,16 +12,20 @@ export function GsShelf() {
     document.title = "高斯溅射 · 私人知识图书馆"
   }, [])
   return (
-    <div className="page shelf">
-      <header className="shelf-head">
+    <div className="page shelf gs-shelf">
+      <header className="shelf-head gs-intro">
+        <div>
         <p className="kicker">图文手册</p>
         <h1>高斯溅射</h1>
-        <p>基础和会过期的接口分开。下面三个动作直接进入对应的页。</p>
+        <p>理解三维场景如何成像，再处理重建中的具体问题。</p>
+        <Link className="read-entry" to="/read/gs-basics">阅读基础原理 <span aria-hidden="true">↗</span></Link>
+        </div>
+        <img src="/figures/reading-room-cover.webp" alt="" />
       </header>
       <div className="gs-actions">
         {ACTIONS.map((action) => (
           <Link key={action.href} to={action.href}>
-            <strong>{action.title}</strong>
+            <strong>{action.title} <span aria-hidden="true">↗</span></strong>
             <span>{action.text}</span>
           </Link>
         ))}

@@ -57,7 +57,9 @@ export function usePalette(query: string): PaletteItem[] {
       meta: `文章 · ${COLUMN_NAME[hit.columnId]}`,
       href: `/read/${hit.articleId}`,
     }))
-    return [...articles, ...terms, ...problems].slice(0, 8)
+    const exactId = PROBLEMS.find((problem) => problem.id.toLowerCase() === q)?.id
+    const exact = problems.find((item) => item.key === `p-${exactId}`)
+    return (exact ? [exact, ...articles, ...terms, ...problems.filter((item) => item !== exact)] : [...articles, ...terms, ...problems]).slice(0, 8)
   }, [query, articleHits])
 }
 

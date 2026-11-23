@@ -34,26 +34,32 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="page" style={{ paddingTop: "1.3rem" }}>
-      <p className="kicker">设置</p>
-      <h1 className="block-title">阅读与数据</h1>
+    <div className="page settings-page">
+      <header className="shelf-head"><h1>设置</h1></header>
+      <nav className="settings-nav" aria-label="设置分类">
+        <a href="#appearance">阅读外观</a>
+        <a href="#local-data">数据与备份</a>
+        <a href="#model">模型设置</a>
+      </nav>
 
-      <section className="section">
-        <h2>阅读偏好</h2>
+      <section className="section" id="appearance">
+        <h2>阅读外观</h2>
+        <p className="font-credit">界面使用 HarmonyOS Sans SC · © 2021 Huawei Device Co., Ltd. <a href="/fonts/LICENSE_Fonts" download>字体许可</a></p>
+        <p className="font-credit">散文与封面使用思源宋体 · Adobe <a href="/fonts/LICENSE_SourceHanSerif" download>字体许可</a></p>
         <fieldset className="stack">
-          <legend className="meta">字号</legend>
+          <p className="meta">字号</p>
           <div className="row">
             <ScaleChoice label="小" current={lib.prefs.fontScale} value={0.94} onPick={(fontScale) => patch({ fontScale })} />
             <ScaleChoice label="中" current={lib.prefs.fontScale} value={1} onPick={(fontScale) => patch({ fontScale })} />
             <ScaleChoice label="大" current={lib.prefs.fontScale} value={1.12} onPick={(fontScale) => patch({ fontScale })} />
           </div>
-          <legend className="meta">行距</legend>
+          <p className="meta">行距</p>
           <div className="row">
             <ScaleChoice label="紧" current={lib.prefs.lineHeight} value={1.7} onPick={(lineHeight) => patch({ lineHeight })} />
             <ScaleChoice label="适中" current={lib.prefs.lineHeight} value={1.9} onPick={(lineHeight) => patch({ lineHeight })} />
             <ScaleChoice label="松" current={lib.prefs.lineHeight} value={2.1} onPick={(lineHeight) => patch({ lineHeight })} />
           </div>
-          <legend className="meta">技术文宽度。散文版心另有上限，不会跟着拉得很宽。</legend>
+          <p className="meta">技术文宽度</p>
           <div className="row">
             {(["narrow", "comfort", "wide"] as Measure[]).map((measure) => (
               <Button key={measure} aria-pressed={lib.prefs.measure === measure} onClick={() => patch({ measure })}>
@@ -61,11 +67,11 @@ export function SettingsPage() {
               </Button>
             ))}
           </div>
-          <legend className="meta">底色</legend>
+          <p className="meta">底色</p>
           <div className="row">
             {(["paper", "night"] as ThemeName[]).map((theme) => (
               <Button key={theme} aria-pressed={lib.prefs.theme === theme} onClick={() => patch({ theme })}>
-                {theme === "paper" ? "纸色" : "夜读"}
+                {theme === "paper" ? "日间" : "夜读"}
               </Button>
             ))}
           </div>
@@ -74,10 +80,14 @@ export function SettingsPage() {
             散文段首缩进
           </label>
         </fieldset>
+        <div className="reading-sample" aria-label="正文预览">
+          <strong>正文预览</strong>
+          <p>一本书读到一半，也是一段完整的相遇。合上之后，下次还能从这里继续。</p>
+        </div>
       </section>
 
-      <section className="section">
-        <h2>数据</h2>
+      <section className="section" id="local-data">
+        <h2>数据与备份</h2>
         <p data-testid="engine-label">
           引擎：{lib.info.engineLabel}。位置：{lib.info.locationLabel}
         </p>
@@ -194,8 +204,8 @@ export function SettingsPage() {
         )}
       </section>
 
-      <section className="section" data-testid="ai-settings">
-        <h2>AI</h2>
+      <section className="section" id="model" data-testid="ai-settings">
+        <h2>模型设置</h2>
         <p className="status-line">{lib.ai.status().headline}</p>
         <p>{lib.ai.status().detail}</p>
         <div className="stack" style={{ maxWidth: "36rem" }}>
