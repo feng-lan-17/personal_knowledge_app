@@ -1,3 +1,4 @@
+import { BackLink } from "../../components/BackLink.tsx"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import type { Article } from "../../domain/types.ts"
@@ -85,6 +86,7 @@ export function AuthorShelf() {
   }, [])
   return (
     <div className="page shelf">
+      <nav className="detail-route"><BackLink fallback="/library/essay" /></nav>
       <p className="kicker">作者页</p>
       <h1>江南与史铁生</h1>
       <p>这里只放书目和合法入口。可读的正文是本库的原创示例，授权情况用下面两句话说明。</p>

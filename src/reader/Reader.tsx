@@ -26,6 +26,13 @@ export function Reader({
 }) {
   const lib = useLibrary()
   const location = useLocation()
+  useEffect(() => {
+    if (!location.hash) return
+    let anchor: string
+    try { anchor = decodeURIComponent(location.hash.slice(1)) } catch { return }
+    const frame = requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView({block:"start"}))
+    return () => cancelAnimationFrame(frame)
+  }, [article.id, location.hash])
   const immersive = article.layout === "immersive"
   const [tocOpen, setTocOpen] = useState(false)
   const chapterButton = useRef<HTMLButtonElement>(null)
@@ -194,7 +201,9 @@ export function Reader({
     }}>
       <header className="reader-bar">
         <div className="reader-path">
-          <Link to={article.columnId === "inbox" ? "/library" : `/library/${article.columnId}`}>← {COLUMN_NAME[article.columnId]}</Link>
+          {location.state?.collectionTab
+            ? <Link to={"/me?tab=" + encodeURIComponent(location.state.collectionTab)}>← 我的藏书</Link>
+            : <Link to={article.columnId === "inbox" ? "/library" : `/library/${article.columnId}`}>← {COLUMN_NAME[article.columnId]}</Link>}
           {narrow && hasChapters && <div className="chapter-anchor" ref={chapterContainer} onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) setTocOpen(false)
           }}>
@@ -277,7 +286,7 @@ export function Reader({
               </ul>
             </details>
           )}
-          {termId ? <TermPopover termId={termId} from={`${location.pathname}${location.hash}`} onClose={() => setTermId(null)} /> : null}
+          {termId ? <TermPopover termId={termId} from={location.pathname + (activeId ? "#" + activeId : location.hash)} onClose={() => setTermId(null)} /> : null}
         </div>
         {aiOpen ? (
           <AiPanel

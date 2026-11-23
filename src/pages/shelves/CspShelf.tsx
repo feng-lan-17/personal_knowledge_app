@@ -1,3 +1,4 @@
+import { BackLink } from "../../components/BackLink.tsx"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { PROBLEM_TOPIC, PROBLEMS, type ProblemEntry } from "../../content/problems.ts"
@@ -71,6 +72,7 @@ export function ProblemPage({ problem }: { problem: ProblemEntry }) {
   }, [problem.id])
   return (
     <div className="page shelf problem-page">
+      <nav className="detail-route"><BackLink fallback="/library/csp" /></nav>
       <p className="kicker">{problem.id} · {problem.source}</p>
       <h1>{problem.title}</h1>
       <p className="meta">{problem.tags.join(" · ")}</p>

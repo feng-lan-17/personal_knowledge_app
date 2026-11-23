@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../components/ui/dialog.tsx"
 import { GLOSSARY, glossaryById } from "../content/glossary.ts"
+import { BackLink } from "../components/BackLink.tsx"
 
 export function EncyclopediaPage() {
   const { termId } = useParams()
@@ -14,8 +15,14 @@ export function EncyclopediaPage() {
   }, [entry])
 
   return (
-    <div className="page shelf">
-      <p className="kicker">大模型 · 百科</p>
+    <div className="page shelf glossary-page">
+      <nav className="detail-route" aria-label="词条导航">
+        {back && /^\/read\/[\w-]+(?:#[^/]+)?$/.test(back)
+          ? <Link className="back-control" replace to={back}>← 返回原文</Link>
+          : <BackLink fallback={termId ? "/library/llm/encyclopedia" : "/library/llm"} />}
+        <Link to="/library/llm">大模型</Link><span aria-hidden="true">/</span>
+        {termId ? <Link to="/library/llm/encyclopedia">百科</Link> : <span>百科</span>}
+      </nav>
       {entry ? (
         <article className="entry-page">
           <h1>{entry.term}</h1>
@@ -28,7 +35,6 @@ export function EncyclopediaPage() {
               {entry.more ? <p>{entry.more}</p> : null}
             </details>
           ) : null}
-          {back ? <p><Link to={back}>回到刚才的位置</Link></p> : <p><Link to="/library/llm/encyclopedia">全部词条</Link></p>}
         </article>
       ) : (
         <>
@@ -36,9 +42,7 @@ export function EncyclopediaPage() {
           <ul className="entry-list">
             {GLOSSARY.map((item) => (
               <li key={item.id}>
-                <Link to={`/library/llm/encyclopedia/${item.id}`}>{item.term}</Link>
-                <p>{item.gloss}</p>
-                <p className="meta">例如：{item.example}</p>
+                <Link to={`/library/llm/encyclopedia/${item.id}`}><strong>{item.term}</strong><span>{item.gloss}</span><i aria-hidden="true">›</i></Link>
               </li>
             ))}
           </ul>

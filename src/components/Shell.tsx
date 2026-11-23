@@ -46,7 +46,7 @@ export function Shell() {
             <div id="library-search">{state.status === "ready" && <Omnibox />}</div>
             <nav className="topnav" aria-label="主导航">
               {CENTER.map(([href, label]) => (
-                <NavLink key={href} to={href} end={href === "/"}>{label}</NavLink>
+                <NavLink key={href} to={href} end={href === "/" || href === "/library"}>{label}</NavLink>
               ))}
             </nav>
             <nav className="shelf-shortcuts" aria-label="领域书架">

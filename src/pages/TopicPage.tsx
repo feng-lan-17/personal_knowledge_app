@@ -148,14 +148,14 @@ export function TopicPage() {
                 if (!window.confirm("删除这个专题？文章和划线不会一起删除。")) return
                 void lib.store.deletePersonalTopic(topic.id).then(() => {
                   lib.refresh()
-                  navigate("/me")
+                  navigate("/me?tab=topics")
                 })
               }}
             >
               删除专题
             </Button>
           ) : null}
-          <Link to="/me">返回我的</Link>
+          <Link to="/me?tab=topics">返回个人专题</Link>
         </div>
       </div>
     </div>

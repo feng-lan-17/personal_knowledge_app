@@ -1,3 +1,4 @@
+import { BackLink } from "../../components/BackLink.tsx"
 import { useEffect } from "react"
 import { Link } from "react-router-dom"
 
@@ -41,6 +42,7 @@ export function GsTroublePage() {
   }, [])
   return (
     <div className="page shelf">
+      <nav className="detail-route"><BackLink fallback="/library/gs" /></nav>
       <p className="kicker">排查</p>
       <h1>重影和漂浮碎块</h1>
       <img className="compare" src="/figures/gs-compare.svg" alt="左图边缘清楚，右图同一物体出现重影，空中还有碎块" />
@@ -74,6 +76,7 @@ export function GsFrontierPage() {
   ]
   return (
     <div className="page shelf">
+      <nav className="detail-route"><BackLink fallback="/library/gs" /></nav>
       <p className="kicker">前沿 · 来源示例</p>
       <h1>可追溯的来源</h1>
       <p>编写于 2026-11-22，之后没有再巡检。这不是教材更新。</p>
